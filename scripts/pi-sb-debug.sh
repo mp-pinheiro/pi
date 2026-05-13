@@ -27,7 +27,7 @@ set -u
 section() { printf '\n\033[1;34m=== %s ===\033[0m\n' "$1"; }
 
 section "mount table around ~/.pi"
-mount | grep -E "/home/matheus/\.pi|tmpfs.*matheus" || echo "  (no matches)"
+mount | grep -E "$HOME/\.pi|tmpfs.*$(whoami)" || echo "  (no matches)"
 
 section "~/.pi listing on host (via sandbox)"
 ls -la "$HOME/.pi/" 2>&1

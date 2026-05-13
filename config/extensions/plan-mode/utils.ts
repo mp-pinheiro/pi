@@ -81,7 +81,7 @@ const SAFE_PATTERNS = [
 	/^\s*yarn\s+(list|info|why|audit)/i,
 	/^\s*node\s+--version/i,
 	/^\s*python\s+--version/i,
-	/^\s*curl\s/i,
+	/^\s*curl\s+(?!.*(-X\s*(POST|PUT|PATCH|DELETE)|--data|--upload|-[dF]\b|--form))/i,
 	/^\s*wget\s+-O\s*-/i,
 	/^\s*jq\b/,
 	/^\s*sed\s+-n/i,
