@@ -79,4 +79,6 @@ ln -sf "$REPO_DIR/scripts/pi-sb-debug.sh" "$HOME/.local/bin/pi-sb-debug"
 
 # -- done ------------------------------------------------------------------
 
+bash "$REPO_DIR/scripts/setup-secrets.sh"
+
 success "pi-setup installed."
