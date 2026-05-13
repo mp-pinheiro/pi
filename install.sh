@@ -74,6 +74,7 @@ cp -R "$REPO_DIR/skills/." "$HOME/.pi/skills/"
 
 mkdir -p "$HOME/.local/bin"
 ln -sf "$REPO_DIR/scripts/pi-sb.sh" "$HOME/.local/bin/pi-sb"
+ln -sf "$REPO_DIR/scripts/pi-nosb.sh" "$HOME/.local/bin/pi-nosb"
 ln -sf "$REPO_DIR/scripts/pi-sb-validate.sh" "$HOME/.local/bin/pi-sb-validate"
 ln -sf "$REPO_DIR/scripts/pi-sb-debug.sh" "$HOME/.local/bin/pi-sb-debug"
 
