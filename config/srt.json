@@ -1,0 +1,15 @@
+{
+  "network": {
+    "allowedDomains": ["openrouter.ai", "*.openrouter.ai", "api.search.brave.com", "api.z.ai", "chatgpt.com"],
+    "deniedDomains": []
+  },
+  "filesystem": {
+    "denyRead":  ["~"],
+    "allowRead":  [".", "~/.pi/agent", "~/.local/share/fnm"],
+    "allowWrite": [".", "~/.pi/sessions", "~/.pi/memory", "~/.pi/agent"],
+    "denyWrite":  []
+  },
+  "seccomp": {
+    "applyPath": "/usr/local/bin/apply-seccomp"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "tools": {
+    "search":   "brave",
+    "contents": "brave",
+    "answer":   "brave",
+    "research": "brave"
+  },
+  "providers": {
+    "brave": {
+      "credentials": {
+        "search":  "BRAVE_API_KEY",
+        "answers": "BRAVE_API_KEY"
+      }
+    }
+  },
+  "settings": {
+    "requestTimeoutMs": 30000,
+    "retryCount": 3,
+    "retryDelayMs": 2000
+  }
+}
