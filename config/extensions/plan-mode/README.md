@@ -15,7 +15,7 @@ Read-only exploration mode for safe code analysis.
 
 - `/plan` - Toggle plan mode
 - `/todos` - Show current plan progress
-- `Ctrl+Alt+P` - Toggle plan mode (shortcut)
+- `Ctrl+\` - Toggle plan mode (shortcut)
 
 ## Usage
 
@@ -49,13 +49,36 @@ Plan:
 
 ### Command Allowlist
 
-Safe commands (allowed):
-- File inspection: `cat`, `head`, `tail`, `less`, `more`
-- Search: `grep`, `find`, `rg`, `fd`
-- Directory: `ls`, `pwd`, `tree`
-- Git read: `git status`, `git log`, `git diff`, `git branch`
-- Package info: `npm list`, `npm outdated`, `yarn info`
-- System info: `uname`, `whoami`, `date`, `uptime`
+**File inspection:**
+- `cat`, `head`, `tail`, `less`, `more`
+- `grep`, `rg` (ripgrep), `fd` (fzf find)
+- `find`, `ls`, `pwd`, `tree`, `bat`, `eza`
+
+**Text processing:**
+- `echo`, `printf`, `wc`, `sort`, `uniq`, `diff`, `file`, `stat`, `du`, `df`
+- `sed -n`, `awk` (read-only)
+
+**Search & directory:**
+- `which`, `whereis`, `type`, `env`, `printenv`, `uname`, `whoami`, `id`
+- `date`, `cal`, `uptime`, `ps`, `htop`, `free`
+
+**Git (read-only):**
+- `git status`, `git log`, `git diff`, `git show`, `git branch`
+- `git remote`, `git config --get`, `git ls-`
+
+**Package info:**
+- `npm list`, `npm ls`, `npm view`, `npm info`, `npm search`, `npm outdated`, `npm audit`
+- `yarn list`, `yarn info`, `yarn why`, `yarn audit`
+
+**Runtime:**
+- `node --version`, `python --version`
+
+**Limited network:**
+- `curl` (GET only, no POST/PUT/PATCH/DELETE, no data upload)
+- `wget -O -` (download to stdout)
+
+**JQ & streaming:**
+- `jq`, `curl | jq` for JSON parsing
 
 Blocked commands:
 - File modification: `rm`, `mv`, `cp`, `mkdir`, `touch`

@@ -97,11 +97,16 @@ Implication: use a lightweight memory extension for durable recall, but keep act
 
 Default stack in this repo:
 1. `pi-web-providers` (existing)
-2. vendored `memory-local` extension in `pi/extensions/memory-local` (forked from `@samfp/pi-memory`)
-3. tuned memory config in `pi/settings.json`:
+2. vendored `memory-local` extension in `config/extensions/memory-local` (forked from `@samfp/pi-memory`)
+3. tuned memory config in `config/settings.json`:
    - `lessonInjection: "selective"`
    - `consolidateOnSwitch: false`
-   - fast consolidation model/timeouts
+   - `consolidateOnShutdown: true`
+   - `consolidationModel: "zai/glm-5-turbo"` (fast, cheap)
+   - `consolidationThinking: "off"`
+   - `consolidationTimeoutMs: 15000`
+   - `consolidationMinUserMessages: 3`
+   - `statusClearMs: 1200`
 
 Why:
 - Keeps the strong utility of the `@samfp/pi-memory` design.
