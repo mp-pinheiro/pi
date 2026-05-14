@@ -1,6 +1,6 @@
 {
   "network": {
-    "allowedDomains": ["openrouter.ai", "*.openrouter.ai", "api.search.brave.com", "api.z.ai", "chatgpt.com", "api.exa.ai", "pc.lan"],
+    "allowedDomains": ["openrouter.ai", "*.openrouter.ai", "api.search.brave.com", "api.z.ai", "chatgpt.com", "api.exa.ai", "llm.pi"],
     "deniedDomains": []
   },
   "filesystem": {
