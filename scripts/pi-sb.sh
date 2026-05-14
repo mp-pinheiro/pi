@@ -13,5 +13,5 @@ fi
 . "$SCRIPT_DIR/lib-preflight.sh"
 resolve_web_provider
 
-PI_BIN="$(readlink -f "$(command -v pi)")" || { echo "pi not found" >&2; exit 1; }
-exec srt --settings "$SRT_SETTINGS" "$PI_BIN" "$@"
+export npm_config_prefix="$(dirname "$(dirname "$(readlink -f "$(command -v node)")")")"
+exec srt --settings "$SRT_SETTINGS" pi "$@"

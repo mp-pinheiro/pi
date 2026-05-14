@@ -36,9 +36,15 @@ command -v socat &>/dev/null || pkg_install socat
 
 # -- pi binary -------------------------------------------------------------
 
-if ! command -v pi &>/dev/null; then
-    info "Installing pi..."
-    curl -fsSL https://pi.dev/install.sh | sh
+PI_PIN="0.73.1"
+PI_PKG="@mariozechner/pi-coding-agent"
+
+pi_ver="$(pi --version 2>/dev/null || echo "")"
+if [ "$pi_ver" != "$PI_PIN" ]; then
+    info "Pinning pi to $PI_PIN..."
+    npm uninstall -g @earendil-works/pi-coding-agent 2>/dev/null || true
+    npm uninstall -g @mariozechner/pi-coding-agent 2>/dev/null || true
+    npm install -g "${PI_PKG}@${PI_PIN}"
 fi
 
 if ! command -v srt &>/dev/null; then
@@ -61,7 +67,7 @@ fi
 
 if ! pi list 2>/dev/null | grep -q "pi-web-providers"; then
     info "Installing pi-web-providers..."
-    pi install npm:pi-web-providers
+    pi install npm:pi-web-providers@3.0.0
 fi
 
 # -- config ----------------------------------------------------------------
