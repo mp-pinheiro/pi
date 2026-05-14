@@ -409,19 +409,20 @@ export default function memoryLocal(pi: ExtensionAPI) {
 			}
 			if (!params.rule) return ok("Rule text required for lessons");
 			const result = store.addLesson(params.rule, params.category ?? "general", "user", params.negative ?? false);
-			if (result.success) return ok(`Lesson learned: ${params.rule}`);
-			return ok(`Already known (${result.reason}): ${params.rule}`);
+			if (result.success) return ok(`Lesson learned (id: ${result.id!.slice(0, 8)}): ${params.rule}`);
+			return ok(`Already known (id: ${result.id!.slice(0, 8)}): ${params.rule}`);
 		},
 	});
 
 	pi.registerTool({
 		name: "memory_forget",
 		label: "Memory Forget",
-		description: "Remove a fact or lesson from persistent memory.",
+		description: "Remove a fact or lesson from persistent memory. For lessons, provide id (UUID prefix) OR rule (text match).",
 		parameters: Type.Object({
-			type: Type.String(),
-			key: Type.Optional(Type.String({ description: "Key for facts" })),
-			id: Type.Optional(Type.String({ description: "ID for lessons" })),
+			type: Type.String({ description: "'fact' or 'lesson'" }),
+			key: Type.Optional(Type.String({ description: "Key for facts (e.g. pref.editor)" })),
+			id: Type.Optional(Type.String({ description: "ID or ID prefix for lessons" })),
+			rule: Type.Optional(Type.String({ description: "Rule text to match for lessons (alternative to id)" })),
 		}),
 		async execute(_id, params) {
 			if (!store) return ok("Memory store not initialized");
@@ -430,6 +431,7 @@ export default function memoryLocal(pi: ExtensionAPI) {
 				type: stripQuotes(params.type),
 				key: stripQuotes(params.key),
 				id: stripQuotes(params.id),
+				rule: stripQuotes(params.rule),
 			};
 			if (params.type !== "fact" && params.type !== "lesson") {
 				return ok(`Invalid type: ${params.type}. Must be 'fact' or 'lesson'.`);
@@ -442,7 +444,17 @@ export default function memoryLocal(pi: ExtensionAPI) {
 				const deleted = store.deleteLesson(params.id);
 				return ok(deleted ? `Forgot lesson ${params.id}` : `Not found: ${params.id}`);
 			}
-			return ok("Provide key (for facts) or id (for lessons)");
+			if (params.type === "lesson" && params.rule) {
+				const matches = store.searchLessons(params.rule, 5);
+				if (matches.length === 0) return ok(`No lessons matching: ${params.rule}`);
+				if (matches.length > 1) {
+					const list = matches.map((l) => `  ${l.id.slice(0, 8)}: ${l.rule}`).join("\n");
+					return ok(`Multiple matches — specify id:\n${list}`);
+				}
+				const deleted = store.deleteLesson(matches[0].id);
+				return ok(deleted ? `Forgot lesson: ${matches[0].rule}` : `Failed to delete: ${matches[0].id}`);
+			}
+			return ok("Provide key (for facts) or id/rule (for lessons)");
 		},
 	});
 
