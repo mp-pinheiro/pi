@@ -27,8 +27,10 @@ with `[DONE:n]` markers.
 
 ## Web Search
 
-The `pi-web-providers` extension exposes `web_search`, `web_contents`,
-`web_answer`, and `web_research` tools — all routed through Brave Search.
+The `pi-web-providers` extension provides `web_search`, `web_contents`,
+`web_answer`, and `web_research` tools. These are already configured and
+ready to use — just call them directly. Do not check API keys, provider
+config, or extension status. If a call fails, retry or report the error.
 Prefer these over `bash curl` for anything that needs current information
 from the web.
 
