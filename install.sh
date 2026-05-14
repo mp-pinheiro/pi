@@ -66,9 +66,14 @@ fi
 
 # -- config ----------------------------------------------------------------
 
-mkdir -p "$HOME/.pi/agent" "$HOME/.pi/sessions" "$HOME/.pi/skills"
+mkdir -p "$HOME/.pi/agent" "$HOME/.pi/sessions" "$HOME/.pi/skills" "$HOME/.pi/local"
 cp -R "$REPO_DIR/config/." "$HOME/.pi/agent/"
 cp -R "$REPO_DIR/skills/." "$HOME/.pi/skills/"
+
+if [ -d "$HOME/.pi/local" ] && [ "$(ls -A "$HOME/.pi/local" 2>/dev/null)" ]; then
+    info "Applying user overrides from ~/.pi/local/..."
+    cp -R "$HOME/.pi/local/." "$HOME/.pi/agent/"
+fi
 
 # -- scripts ---------------------------------------------------------------
 
