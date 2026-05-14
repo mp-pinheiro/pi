@@ -1,11 +1,24 @@
 {
   "tools": {
-    "search":   "brave",
-    "contents": "brave",
-    "answer":   "brave",
-    "research": "brave"
+    "search":   "exa",
+    "contents": "exa",
+    "answer":   "exa",
+    "research": "exa"
   },
   "providers": {
+    "exa": {
+      "credentials": {
+        "api": "EXA_API_KEY"
+      },
+      "options": {
+        "search": {
+          "type": "auto",
+          "contents": {
+            "text": true
+          }
+        }
+      }
+    },
     "brave": {
       "credentials": {
         "search":  "BRAVE_API_KEY",
