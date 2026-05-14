@@ -25,12 +25,25 @@
       }
     },
     "llama": {
-      "baseUrl": "http://localhost:8080/v1",
+      "baseUrl": "http://pc.lan:8080/v1",
       "api": "openai-completions",
-      "modelOverrides": {
-        "qwen-9b":  { "name": "Qwen3.5 9B (local · fast)" },
-        "qwen-35b": { "name": "Qwen3.6 35B MoE (local · smart)" }
-      }
+      "apiKey": "none",
+      "models": [
+        {
+          "id": "qwen-9b",
+          "name": "Qwen3.5 9B (local · fast)",
+          "reasoning": true,
+          "contextWindow": 32768,
+          "maxTokens": 8192
+        },
+        {
+          "id": "qwen-35b",
+          "name": "Qwen3.6 35B MoE (local · smart)",
+          "reasoning": true,
+          "contextWindow": 32768,
+          "maxTokens": 8192
+        }
+      ]
     }
   }
 }
