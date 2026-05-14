@@ -5,7 +5,7 @@
   },
   "filesystem": {
     "denyRead":  ["~"],
-    "allowRead":  [".", "~/.pi/agent", "~/.local/share/fnm", "~/.npmrc"],
+    "allowRead":  [".", "~/.pi/agent", "~/.pi/skills", "~/.local/share/fnm", "~/.npmrc"],
     "allowWrite": [".", "~/.pi/sessions", "~/.pi/memory", "~/.pi/agent", "/tmp"],
     "denyWrite":  []
   },
