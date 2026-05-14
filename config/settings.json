@@ -5,7 +5,7 @@
   "hideThinkingBlock": false,
   "enableInstallTelemetry": false,
   "theme": "default",
-  "packages": ["pi-web-providers"],
+  "packages": ["npm:pi-web-providers"],
   "memory": {
     "lessonInjection": "selective",
     "consolidateOnSwitch": false,

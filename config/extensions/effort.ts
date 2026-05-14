@@ -14,8 +14,8 @@
  * degrades gracefully.
  */
 
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { Key, matchesKey, truncateToWidth } from "@earendil-works/pi-tui";
+import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import { Key, matchesKey, truncateToWidth } from "@mariozechner/pi-tui";
 
 const LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const;
 type Level = (typeof LEVELS)[number];
