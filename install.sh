@@ -80,6 +80,8 @@ ln -sf "$REPO_DIR/scripts/pi-sb-debug.sh" "$HOME/.local/bin/pi-sb-debug"
 
 # -- done ------------------------------------------------------------------
 
-bash "$REPO_DIR/scripts/setup-secrets.sh"
+if [ ! -f "$HOME/.zsh_secrets" ]; then
+    warn "~/.zsh_secrets not found. Create it with your API keys (see .zsh_secrets.example)."
+fi
 
 success "pi-setup installed."
