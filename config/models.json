@@ -23,6 +23,14 @@
         "anthropic/claude-sonnet-4.6":    { "name": "Sonnet 4.6 (backup)" },
         "google/gemini-3-flash-preview":  { "name": "Gemini 3 Flash (fast backup)" }
       }
+    },
+    "llama": {
+      "baseUrl": "http://localhost:8080/v1",
+      "api": "openai-completions",
+      "modelOverrides": {
+        "qwen-9b":  { "name": "Qwen3.5 9B (local · fast)" },
+        "qwen-35b": { "name": "Qwen3.6 35B MoE (local · smart)" }
+      }
     }
   }
 }
