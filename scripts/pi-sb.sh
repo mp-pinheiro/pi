@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Sandboxed pi launcher.
-#   - srt (Anthropic sandbox-runtime) enforces the policy in ~/.pi/agent/srt.json
-#   - Filesystem: $PWD + ~/.pi only; rest of home is invisible
-#   - Network: OpenRouter only
-[ -f "$HOME/.zsh_secrets" ] && set -a && . "$HOME/.zsh_secrets" && set +a
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SRT_SETTINGS="${PI_SRT_SETTINGS:-$HOME/.pi/agent/srt.json}"
+
+if [ -f "$HOME/.zsh_secrets" ]; then
+    set -a
+    . "$HOME/.zsh_secrets"
+    set +a
+fi
+
+. "$SCRIPT_DIR/lib-preflight.sh"
+resolve_web_provider
 
 PI_BIN="$(readlink -f "$(command -v pi)")" || { echo "pi not found" >&2; exit 1; }
-exec srt --settings "$HOME/.pi/agent/srt.json" "$PI_BIN" "$@"
+exec srt --settings "$SRT_SETTINGS" "$PI_BIN" "$@"

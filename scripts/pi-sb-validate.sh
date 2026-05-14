@@ -98,7 +98,7 @@ echo "--- filesystem writes ---"
 check_write_allowed "./srt-write"               "./srt-write"
 check_write_allowed "~/.pi/sessions/srt-write"  "$HOME/.pi/sessions/srt-write"
 check_write_tmpfs   "~/srt-write"               "$HOME/srt-write"
-check_write_blocked "/tmp/srt-write"            "/tmp/srt-write"
+check_write_allowed "/tmp/srt-write"             "/tmp/srt-write"
 
 echo "--- environment ---"
 [ -n "${HTTP_PROXY:-}" ]  && pass "HTTP_PROXY set ($HTTP_PROXY)"  || fail "HTTP_PROXY not set"
@@ -117,6 +117,7 @@ check_net allow openrouter.ai
 check_net allow api.z.ai
 check_net allow chatgpt.com
 check_net allow api.search.brave.com
+check_net allow api.exa.ai
 
 echo "--- network (blocked) ---"
 check_net block www.google.com

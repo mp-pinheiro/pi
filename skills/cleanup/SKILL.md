@@ -2,7 +2,7 @@
 name: cleanup
 description: "Orchestrates a comprehensive, parallelized codebase cleanup. Analyzes repository style, chunks the workload based on size, and spawns multiple codebase-cleanup agents to remove AI artifacts and useless files. Finalizes by committing changes according to the repo's historical style."
 model: sonnet
-allowed-tools: Bash(git add:*), Bash(git commit:*), Bash(git ls-files:*), Bash(rg:*), Bash(git:*), Bash(git log:*), Glob, Grep, Read, Edit, MultiEdit, Write, WebFetch, TodoWrite, WebSearch, Task, mcp__repomix__pack_codebase, mcp__repomix__pack_remote_repository, mcp__repomix__attach_packed_output, mcp__repomix__read_repomix_output, mcp__repomix__grep_repomix_output, mcp__repomix__file_system_read_file, mcp__repomix__file_system_read_directory, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+allowed-tools: Bash(git add:*), Bash(git commit:*), Bash(git ls-files:*), Bash(rg:*), Bash(git:*), Bash(git log:*), Glob, Grep, Read, Edit, MultiEdit, Write, Task
 ---
 
 You are the Lead Codebase Hygiene Coordinator. Your goal is to orchestrate a massive cleanup phase by analyzing the repository, parallelizing the workload to specialized agents, and finalizing the project with stylistically accurate commits.

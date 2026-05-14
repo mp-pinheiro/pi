@@ -43,7 +43,6 @@ export interface MemoryEvent {
 
 export class MemoryStore {
   private db: DatabaseSync;
-  private writeLock: Promise<void> = Promise.resolve();
   private hasFTS5: boolean = false;
 
   constructor(dbPath: string) {

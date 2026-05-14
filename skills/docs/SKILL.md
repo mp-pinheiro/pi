@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(rg:*), Bash(git:*), Glob, Grep, Read, mcp__repomix__pack_codebase, mcp__repomix__attach_packed_output, mcp__repomix__read_repomix_output, mcp__repomix__grep_repomix_output, mcp__repomix__file_system_read_file, mcp__repomix__file_system_read_directory, Write, Edit
+allowed-tools: Bash(rg:*), Bash(git:*), Glob, Grep, Read, Write, Edit
 description: Update codebase documentation to reflect current code state
 ---
 
