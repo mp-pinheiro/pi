@@ -74,6 +74,8 @@ fi
 
 mkdir -p "$HOME/.pi/agent" "$HOME/.pi/sessions" "$HOME/.pi/skills" "$HOME/.pi/local"
 cp -R "$REPO_DIR/config/." "$HOME/.pi/agent/"
+cp "$REPO_DIR/config/srt.json" "$HOME/.pi/srt.json"
+rm -f "$HOME/.pi/agent/srt.json"
 cp -R "$REPO_DIR/skills/." "$HOME/.pi/skills/"
 
 if [ -d "$HOME/.pi/local" ] && [ "$(ls -A "$HOME/.pi/local" 2>/dev/null)" ]; then
@@ -90,6 +92,11 @@ ln -sf "$REPO_DIR/scripts/pi-sb-validate.sh" "$HOME/.local/bin/pi-sb-validate"
 ln -sf "$REPO_DIR/scripts/pi-sb-debug.sh" "$HOME/.local/bin/pi-sb-debug"
 
 # -- done ------------------------------------------------------------------
+
+if ! grep -q 'llm\.pi' /etc/hosts 2>/dev/null; then
+    info "Adding llm.pi to /etc/hosts (for local LLM sandbox access)..."
+    echo "127.0.0.1 llm.pi" | sudo tee -a /etc/hosts >/dev/null
+fi
 
 if [ ! -f "$HOME/.zsh_secrets" ]; then
     warn "~/.zsh_secrets not found. Create it with your API keys (see .zsh_secrets.example)."

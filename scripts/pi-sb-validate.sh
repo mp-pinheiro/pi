@@ -5,7 +5,7 @@
 
 set -u
 
-SRT_SETTINGS="${PI_SRT_SETTINGS:-$HOME/.pi/agent/srt.json}"
+SRT_SETTINGS="${PI_SRT_SETTINGS:-$HOME/.pi/srt.json}"
 
 if ! command -v srt >/dev/null 2>&1; then
     printf '\033[0;31m[!]\033[0m srt not installed. Run: npm install -g @anthropic-ai/sandbox-runtime\n' >&2

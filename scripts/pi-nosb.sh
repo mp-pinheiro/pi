@@ -12,14 +12,8 @@ fi
 . "$SCRIPT_DIR/lib-preflight.sh"
 resolve_web_provider
 
-SELF="$(readlink -f "$0")"
-PI_BIN=""
-for candidate in $(which -a pi 2>/dev/null); do
-    resolved="$(readlink -f "$candidate" 2>/dev/null)"
-    if [ "$resolved" != "$SELF" ]; then
-        PI_BIN="$resolved"
-        break
-    fi
-done
-[ -z "$PI_BIN" ] && { echo "pi binary not found" >&2; exit 1; }
+FNM_ROOT="$HOME/.local/share/fnm"
+FNM_VER="$(fnm current 2>/dev/null || ls "$FNM_ROOT/node-versions/" 2>/dev/null | head -1)"
+PI_BIN="$FNM_ROOT/node-versions/$FNM_VER/installation/bin/pi"
+[ -x "$PI_BIN" ] || { echo "pi binary not found at $PI_BIN" >&2; exit 1; }
 exec "$PI_BIN" "$@"
