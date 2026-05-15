@@ -24,10 +24,10 @@
   "enabledModels": [
     "glm-5.1",
     "glm-5-turbo",
-    "gpt-5.3-codex",
-    "gpt-5.1-codex-max",
+    "openai-codex/gpt-5.5",
+    "openai-codex/gpt-5.4",
     "moonshotai/kimi-k2-thinking",
-    "claude-opus-4.6",
+    "anthropic/claude-opus-4.6",
     "claude-sonnet-4.6",
     "gemini-3-flash-preview",
     "qwen-9b",
