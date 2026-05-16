@@ -165,8 +165,12 @@ export default function (pi: ExtensionAPI) {
 					const padding = Math.max(1, width - visibleWidth(leftPart) - visibleWidth(costText));
 					const line2 = leftPart + " ".repeat(padding) + costText;
 
+					const cwd = process.cwd();
+					const dirPart = theme.fg("borderAccent", `📂 ${cwd}`);
+					const line1WithDir = `${line1} | ${dirPart}`;
+
 					return [
-						truncateToWidth(line1, width),
+						truncateToWidth(line1WithDir, width),
 						truncateToWidth(line2, width),
 					];
 				},
