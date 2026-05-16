@@ -3,14 +3,14 @@
     "zai": {
       "apiKey": "Z_AI_API_KEY",
       "modelOverrides": {
-        "glm-5.1":     { "name": "GLM-5.1 (z.ai sub · default)" },
-        "glm-5-turbo": { "name": "GLM-5-Turbo (z.ai sub · fast)" }
+        "glm-5.1":     { "name": "GLM-5.1 (z.ai sub · default)", "contextWindow": 202752, "maxTokens": 131072 },
+        "glm-5-turbo": { "name": "GLM-5-Turbo (z.ai sub · fast)", "contextWindow": 202752, "maxTokens": 131072 }
       }
     },
     "openai-codex": {
       "modelOverrides": {
-        "gpt-5.5":     { "name": "GPT-5.5 (ChatGPT sub)" },
-        "gpt-5.4":     { "name": "GPT-5.4 (ChatGPT sub · fast)" }
+        "gpt-5.5":     { "name": "GPT-5.5 (ChatGPT sub)", "contextWindow": 1050000, "maxTokens": 128000 },
+        "gpt-5.4":     { "name": "GPT-5.4 (ChatGPT sub · fast)", "contextWindow": 1050000, "maxTokens": 128000 }
       }
     },
     "openrouter": {
@@ -28,9 +28,9 @@
         }
       ],
       "modelOverrides": {
-        "moonshotai/kimi-k2-thinking":    { "name": "Kimi K2 Thinking (cheap thinking)" },
-        "anthropic/claude-sonnet-4.6":    { "name": "Sonnet 4.6 (backup)" },
-        "google/gemini-3-flash-preview":  { "name": "Gemini 3 Flash (fast backup)" }
+        "moonshotai/kimi-k2-thinking":    { "name": "Kimi K2 Thinking (cheap thinking)", "contextWindow": 262144, "maxTokens": 262144 },
+        "anthropic/claude-sonnet-4.6":    { "name": "Sonnet 4.6 (backup)", "contextWindow": 1000000, "maxTokens": 64000 },
+        "google/gemini-3-flash-preview":  { "name": "Gemini 3 Flash (fast backup)", "contextWindow": 1048576, "maxTokens": 65536 }
       }
     },
     "llama": {
