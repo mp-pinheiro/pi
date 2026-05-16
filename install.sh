@@ -45,6 +45,8 @@ if [ "$pi_ver" != "$PI_PIN" ]; then
     npm uninstall -g @earendil-works/pi-coding-agent 2>/dev/null || true
     npm uninstall -g @mariozechner/pi-coding-agent 2>/dev/null || true
     npm install -g "${PI_PKG}@${PI_PIN}"
+    # Remove npm's pi shim so our wrapper at ~/.local/bin/pi takes precedence
+    rm -f "$(npm bin -g 2>/dev/null)/pi" 2>/dev/null || true
 fi
 
 if ! command -v srt &>/dev/null; then
@@ -70,6 +72,15 @@ if ! pi list 2>/dev/null | grep -q "pi-web-providers"; then
     pi install npm:pi-web-providers@3.0.0
 fi
 
+# -- docker proxy ----------------------------------------------------------
+
+if command -v docker &>/dev/null && command -v go &>/dev/null; then
+    if ! command -v socket-proxy &>/dev/null; then
+        info "Installing socket-proxy (Docker API filter)..."
+        GOBIN="$HOME/.local/bin" go install github.com/mp-pinheiro/socket-proxy/cmd/socket-proxy@latest
+    fi
+fi
+
 # -- config ----------------------------------------------------------------
 
 mkdir -p "$HOME/.pi/agent" "$HOME/.pi/sessions" "$HOME/.pi/skills" "$HOME/.pi/local"
@@ -86,6 +97,7 @@ fi
 # -- scripts ---------------------------------------------------------------
 
 mkdir -p "$HOME/.local/bin"
+ln -sf "$REPO_DIR/scripts/lib-docker-proxy.sh" "$HOME/.pi/lib-docker-proxy.sh"
 ln -sf "$REPO_DIR/scripts/pi-sb.sh" "$HOME/.local/bin/pi"
 ln -sf "$REPO_DIR/scripts/pi-nosb.sh" "$HOME/.local/bin/pi-nosb"
 ln -sf "$REPO_DIR/scripts/pi-sb-validate.sh" "$HOME/.local/bin/pi-sb-validate"

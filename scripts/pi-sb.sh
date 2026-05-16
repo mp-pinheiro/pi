@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 SRT_SETTINGS="${PI_SRT_SETTINGS:-$HOME/.pi/srt.json}"
 
 if [ -f "$HOME/.zsh_secrets" ]; then
@@ -11,7 +11,9 @@ if [ -f "$HOME/.zsh_secrets" ]; then
 fi
 
 . "$SCRIPT_DIR/lib-preflight.sh"
+. "$SCRIPT_DIR/lib-docker-proxy.sh"
 resolve_web_provider
+ensure_docker_proxy
 
 FNM_ROOT="$HOME/.local/share/fnm"
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--use-env-proxy"

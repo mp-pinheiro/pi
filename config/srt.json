@@ -1,7 +1,8 @@
 {
   "network": {
     "allowedDomains": ["openrouter.ai", "*.openrouter.ai", "api.search.brave.com", "api.z.ai", "chatgpt.com", "*.openai.com", "api.exa.ai", "llm.pi", "localhost"],
-    "deniedDomains": []
+    "deniedDomains": [],
+    "allowAllUnixSockets": true
   },
   "filesystem": {
     "denyRead":  ["~"],
