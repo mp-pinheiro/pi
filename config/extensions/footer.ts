@@ -166,7 +166,7 @@ export default function (pi: ExtensionAPI) {
 					const line2 = leftPart + " ".repeat(padding) + costText;
 
 					const cwd = process.cwd();
-					const dirPart = theme.fg("borderAccent", `📂 ${cwd}`);
+					const dirPart = theme.fg("success", `📂 ${cwd}`);
 					const line1WithDir = `${line1} | ${dirPart}`;
 
 					return [
