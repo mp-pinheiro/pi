@@ -33,7 +33,7 @@ function loadPrompt(name: string): string {
 	}
 }
 
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "questionnaire", "web_search", "web_contents", "web_answer", "web_research"];
 
 function isAssistantMessage(m: AgentMessage): m is AssistantMessage {
 	return m.role === "assistant" && Array.isArray(m.content);
@@ -269,44 +269,38 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (!planModeEnabled || !ctx.hasUI) return;
 
 		const lastAssistant = [...event.messages].reverse().find(isAssistantMessage);
-		if (lastAssistant) {
-			const extracted = extractTodoItems(getTextContent(lastAssistant));
-			if (extracted.length > 0) {
-				todoItems = extracted;
-			}
-		}
+		if (!lastAssistant) return;
 
-		if (todoItems.length > 0) {
-			const todoListText = todoItems.map((t, i) => `${i + 1}. ☐ ${t.text}`).join("\n");
-			pi.sendMessage(
-				{
-					customType: "plan-todo-list",
-					content: `**Plan Steps (${todoItems.length}):**\n\n${todoListText}`,
-					display: true,
-				},
-				{ triggerTurn: false },
-			);
-		}
+		const extracted = extractTodoItems(getTextContent(lastAssistant));
+		if (extracted.length === 0) return;
+
+		todoItems = extracted;
+
+		const todoListText = todoItems.map((t, i) => `${i + 1}. ☐ ${t.text}`).join("\n");
+		pi.sendMessage(
+			{
+				customType: "plan-todo-list",
+				content: `**Plan Steps (${todoItems.length}):**\n\n${todoListText}`,
+				display: true,
+			},
+			{ triggerTurn: false },
+		);
 
 		const choice = await ctx.ui.select("Plan mode - what next?", [
-			todoItems.length > 0 ? "Execute the plan (track progress)" : "Execute the plan",
+			"Execute the plan (track progress)",
 			"Stay in plan mode",
 			"Refine the plan",
 		]);
 
 		if (choice?.startsWith("Execute")) {
 			planModeEnabled = false;
-			executionMode = todoItems.length > 0;
+			executionMode = true;
 			isInitialExecutionTurn = true;
 			restoreAllTools();
 			updateStatus(ctx);
 
-			const execMessage =
-				todoItems.length > 0
-					? `Execute the plan. Start with: ${todoItems[0].text}`
-					: "Execute the plan you just created.";
 			pi.sendMessage(
-				{ customType: "plan-mode-execute", content: execMessage, display: true },
+				{ customType: "plan-mode-execute", content: `Execute the plan. Start with: ${todoItems[0].text}`, display: true },
 				{ triggerTurn: true },
 			);
 		} else if (choice === "Refine the plan") {

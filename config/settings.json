@@ -5,6 +5,7 @@
   "hideThinkingBlock": false,
   "enableInstallTelemetry": false,
   "theme": "nord",
+  "shellCommandPrefix": "source ~/.pi/agent/shell-snapshot.sh 2>/dev/null",
   "packages": ["npm:pi-web-providers"],
   "memory": {
     "lessonInjection": "selective",
