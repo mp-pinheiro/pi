@@ -1,5 +1,5 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { AssistantMessage, TextContent } from "@mariozechner/pi-ai";
+import type { TextContent } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -27,11 +27,13 @@ type PlanState = "normal" | "planning" | "reviewing" | "executing";
 interface PersistedPlanState {
 	state: PlanState;
 	planFile: string | null;
+	executionStarted: boolean;
 }
 
 export default function planModeExtension(pi: ExtensionAPI): void {
 	let state: PlanState = "normal";
 	let planFile: string | null = null;
+	let executionStarted = false;
 
 	pi.registerFlag("plan", {
 		description: "Start in plan mode (read-only exploration)",
@@ -40,7 +42,11 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	});
 
 	function persistState(): void {
-		pi.appendEntry("plan-mode", { state, planFile } satisfies PersistedPlanState);
+		pi.appendEntry("plan-mode", { state, planFile, executionStarted } satisfies PersistedPlanState);
+	}
+
+	function restoreAllTools(): void {
+		pi.setActiveTools(pi.getAllTools().map((t) => t.name));
 	}
 
 	function updateStatus(ctx: ExtensionContext): void {
@@ -60,14 +66,19 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				ctx.ui.setStatus("plan-mode", ctx.ui.theme.fg("customMessageLabel", "⏩ normal mode"));
 				break;
 		}
-		ctx.ui.setWidget("plan-todos", undefined);
 	}
 
 	function enterPlanMode(ctx: ExtensionContext): void {
-		const dir = ensurePlanDir(ctx.cwd);
-		const slug = generatePlanSlug();
-		planFile = join(dir, `${slug}.md`);
+		try {
+			const dir = ensurePlanDir(ctx.cwd);
+			const slug = generatePlanSlug();
+			planFile = join(dir, `${slug}.md`);
+		} catch (err) {
+			ctx.ui.notify(`Failed to create plan directory: ${err instanceof Error ? err.message : err}`);
+			return;
+		}
 		state = "planning";
+		executionStarted = false;
 		pi.setActiveTools(PLAN_MODE_TOOLS);
 		persistState();
 		updateStatus(ctx);
@@ -77,7 +88,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	function exitToNormal(ctx: ExtensionContext, message: string): void {
 		state = "normal";
 		planFile = null;
-		pi.setActiveTools(pi.getAllTools().map((t) => t.name));
+		executionStarted = false;
+		restoreAllTools();
 		persistState();
 		updateStatus(ctx);
 		ctx.ui.notify(message);
@@ -87,7 +99,9 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (state === "normal") {
 			enterPlanMode(ctx);
 		} else {
-			exitToNormal(ctx, state === "executing" ? "Execution aborted. Full access restored." : "Plan mode disabled. Full access restored.");
+			exitToNormal(ctx, state === "executing"
+				? "Execution aborted. Full access restored."
+				: "Plan mode disabled. Full access restored.");
 		}
 	}
 
@@ -101,7 +115,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		handler: async (ctx) => togglePlanMode(ctx),
 	});
 
-	// Tool safety gate during plan mode
 	pi.on("tool_call", async (event) => {
 		if (state !== "planning" && state !== "reviewing") return;
 
@@ -117,7 +130,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 
 		if (event.toolName === "write" || event.toolName === "edit") {
-			const filePath = (event.input.file_path ?? event.input.filePath ?? "") as string;
+			const input = event.input as Record<string, unknown>;
+			const filePath = String(input.file_path ?? input.filePath ?? input.path ?? "");
 			if (planFile && filePath === planFile) return;
 			return {
 				block: true,
@@ -126,12 +140,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 	});
 
-	// Strip stale plan messages from context when in normal mode
 	const STALE_PLAN_CUSTOM_TYPES = new Set([
 		"plan-mode-context",
 		"plan-execution-context",
 		"plan-mode-execute",
-		"plan-incomplete",
 		"plan-complete",
 	]);
 	const STALE_PLAN_MARKERS = ["[PLAN MODE ACTIVE]", "[EXECUTING PLAN]"];
@@ -157,7 +169,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		};
 	});
 
-	// Inject plan mode prompt before each agent turn
 	pi.on("before_agent_start", async () => {
 		if (state === "planning" || state === "reviewing") {
 			const prompt = loadPrompt("plan-mode-active").replace(/\{planFilePath\}/g, planFile ?? "<unknown>");
@@ -171,27 +182,34 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 
 		if (state === "executing" && planFile) {
-			const prompt = loadPrompt("plan-mode-execute").replace(/\{planFilePath\}/g, planFile);
+			if (!executionStarted) {
+				executionStarted = true;
+				persistState();
+				const prompt = loadPrompt("plan-mode-execute").replace(/\{planFilePath\}/g, planFile);
+				return {
+					message: {
+						customType: "plan-execution-context",
+						content: `[EXECUTING PLAN]\n\n${prompt}`,
+						display: false,
+					},
+				};
+			}
+			// Subsequent turns: short reminder only — model already has the plan context
 			return {
 				message: {
 					customType: "plan-execution-context",
-					content: `[EXECUTING PLAN]\n\n${prompt}`,
+					content: `[EXECUTING PLAN]\n\nContinue executing the plan at \`${planFile}\`. Pick up where you left off. Full tool access is available.`,
 					display: false,
 				},
 			};
 		}
 	});
 
-	// After agent finishes in planning state — check for plan file and prompt user
 	pi.on("agent_end", async (_event, ctx) => {
-		if (state === "executing") {
-			exitToNormal(ctx, "Plan execution complete.");
-			pi.sendMessage(
-				{ customType: "plan-complete", content: "**Plan execution complete.** Full access restored.", display: true },
-				{ triggerTurn: false },
-			);
-			return;
-		}
+		// During execution: stay in executing state. The user exits via /plan
+		// when satisfied, or sends another message to continue if the model
+		// stopped early (token limit, clarifying question, etc).
+		if (state === "executing") return;
 
 		if (state !== "planning" || !planFile || !ctx.hasUI) return;
 		if (!existsSync(planFile)) return;
@@ -209,7 +227,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 		if (choice === choices[0]) {
 			state = "executing";
-			pi.setActiveTools(pi.getAllTools().map((t) => t.name));
+			executionStarted = false;
+			restoreAllTools();
 			persistState();
 			updateStatus(ctx);
 			pi.sendMessage(
@@ -223,7 +242,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		} else if (choice === choices[1]) {
 			state = "planning";
 			persistState();
-			const currentContent = readFileSync(planFile, "utf-8");
+			let currentContent = "";
+			try {
+				currentContent = readFileSync(planFile, "utf-8");
+			} catch { /* file may have been deleted between check and read */ }
 			const refinement = await ctx.ui.editor("Refine the plan:", currentContent);
 			if (refinement?.trim()) {
 				pi.sendUserMessage(`Revise the plan based on this feedback. Update the plan file at \`${planFile}\`.\n\nFeedback:\n${refinement.trim()}`);
@@ -232,7 +254,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			}
 			updateStatus(ctx);
 		} else {
-			// "Stay in plan mode" or dismissed (undefined)
 			state = "planning";
 			persistState();
 			updateStatus(ctx);
@@ -240,7 +261,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		}
 	});
 
-	// Restore state on session resume
 	pi.on("session_start", async (_event, ctx) => {
 		if (pi.getFlag("plan") === true) {
 			enterPlanMode(ctx);
@@ -255,10 +275,12 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (planModeEntry?.data) {
 			state = planModeEntry.data.state ?? "normal";
 			planFile = planModeEntry.data.planFile ?? null;
+			executionStarted = planModeEntry.data.executionStarted ?? false;
 
 			if (planFile && !existsSync(planFile)) {
 				state = "normal";
 				planFile = null;
+				executionStarted = false;
 			}
 		}
 

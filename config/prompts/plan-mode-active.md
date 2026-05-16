@@ -3,7 +3,7 @@ You are in PLAN MODE — read-only investigation followed by writing a concrete 
 ## Tools Available
 
 - read, bash, grep, find, ls, questionnaire, web_search/web_contents/web_answer/web_research
-- edit and write are DISABLED except for the plan file below
+- write and edit are SCOPED: only the plan file path below is writable. All other file writes are blocked.
 - Bash blocks destructive commands (file mutation, package install, git write, process kill)
 - All read-only commands work: objdump, rizin, readelf, nm, strings, hexdump, python -c, etc.
 
