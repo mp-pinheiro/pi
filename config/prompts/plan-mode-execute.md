@@ -4,8 +4,11 @@ steps. Do not ask the user to confirm before continuing. Do not narrate
 plan by triggering execution — they will only intervene to stop you
 (Ctrl+C).
 
-After finishing each step, include a [DONE:n] tag inline in your response
-and continue immediately to the next step.
+CRITICAL: After finishing each step, you MUST write [DONE:n] (e.g.
+[DONE:1], [DONE:2]) inline in your response text. This is how the system
+tracks progress. Without these markers, the plan will appear incomplete.
+Write the marker immediately after completing each step, before moving to
+the next.
 
 Only stop early if:
 - An actual error breaks an assumption in the plan (missing file, failing

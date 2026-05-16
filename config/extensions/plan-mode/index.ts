@@ -50,6 +50,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	let planModeEnabled = false;
 	let executionMode = false;
 	let todoItems: TodoItem[] = [];
+	let isInitialExecutionTurn = false;
+	let agentRunProgress = 0;
 
 	pi.registerFlag("plan", {
 		description: "Start in plan mode (read-only exploration)",
@@ -116,6 +118,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			enabled: planModeEnabled,
 			todos: todoItems,
 			executing: executionMode,
+			initialTurn: isInitialExecutionTurn,
 		});
 	}
 
@@ -190,6 +193,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("before_agent_start", async () => {
+		agentRunProgress = 0;
+
 		if (planModeEnabled) {
 			return {
 				message: {
@@ -218,7 +223,9 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (!isAssistantMessage(event.message)) return;
 
 		const text = getTextContent(event.message);
-		if (markCompletedSteps(text, todoItems) > 0) {
+		const completed = markCompletedSteps(text, todoItems);
+		agentRunProgress += completed;
+		if (completed > 0) {
 			updateStatus(ctx);
 		}
 		persistState();
@@ -237,8 +244,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 				restoreAllTools();
 				updateStatus(ctx);
 				persistState();
+			} else if (!isInitialExecutionTurn && agentRunProgress === 0) {
+				executionMode = false;
+				todoItems = [];
+				restoreAllTools();
+				updateStatus(ctx);
+				persistState();
 			} else {
-				// Incomplete execution — notify user with remaining steps
+				isInitialExecutionTurn = false;
 				const remaining = todoItems.filter((t) => !t.completed);
 				const remainingList = remaining.map((t) => `  ${t.step}. ${t.text}`).join("\n");
 				pi.sendMessage(
@@ -284,6 +297,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		if (choice?.startsWith("Execute")) {
 			planModeEnabled = false;
 			executionMode = todoItems.length > 0;
+			isInitialExecutionTurn = true;
 			restoreAllTools();
 			updateStatus(ctx);
 
@@ -312,12 +326,13 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
 		const planModeEntry = entries
 			.filter((e: { type: string; customType?: string }) => e.type === "custom" && e.customType === "plan-mode")
-			.pop() as { data?: { enabled: boolean; todos?: TodoItem[]; executing?: boolean } } | undefined;
+			.pop() as { data?: { enabled: boolean; todos?: TodoItem[]; executing?: boolean; initialTurn?: boolean } } | undefined;
 
 		if (planModeEntry?.data) {
 			planModeEnabled = planModeEntry.data.enabled ?? planModeEnabled;
 			todoItems = planModeEntry.data.todos ?? todoItems;
 			executionMode = planModeEntry.data.executing ?? executionMode;
+			isInitialExecutionTurn = planModeEntry.data.initialTurn ?? false;
 		}
 
 		// On resume: only scan messages after the last plan-mode-execute entry
