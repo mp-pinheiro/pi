@@ -19,11 +19,15 @@ providers only. See `srt.json` for the current allowlist.
 
 ## Plan Mode
 
-`/plan` enables a read-only mode that restricts the agent to investigation
-tools (read, grep, find, ls, safe bash). When the user invokes plan mode for
-a non-trivial task, produce a numbered `Plan:` list, then wait for the user
-to choose "Execute the plan" before making changes. Track execution progress
-with `[DONE:n]` markers.
+`/plan` (or `Ctrl+\`) enters read-only investigation mode. Bash uses a
+blocklist — any command is allowed unless destructive (file mutation, package
+install, git write, process kill). All diagnostic tools work freely (rizin,
+objdump, readelf, python -c, etc.).
+
+After investigation, write a plan file to `.pi/plans/plan-<timestamp>.md`
+with sections: Context, Steps, Verification. The user then chooses Execute,
+Refine, or Stay. On execute, full tools are restored and you read the plan
+file to implement all steps in one turn.
 
 ## Web Search
 

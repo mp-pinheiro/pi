@@ -1,88 +1,59 @@
 # Plan Mode Extension
 
-Read-only exploration mode for safe code analysis.
-
-## Features
-
-- **Read-only tools**: Restricts available tools to read, bash, grep, find, ls, question
-- **Bash allowlist**: Only read-only bash commands are allowed
-- **Plan extraction**: Extracts numbered steps from `Plan:` sections
-- **Progress tracking**: Widget shows completion status during execution
-- **[DONE:n] markers**: Explicit step completion tracking
-- **Session persistence**: State survives session resume
+Read-only exploration mode with persistent plan files.
 
 ## Commands
 
-- `/plan` - Toggle plan mode
-- `/todos` - Show current plan progress
-- `Ctrl+\` - Toggle plan mode (shortcut)
+- `/plan` — Toggle plan mode (also `Ctrl+\`)
+- `--plan` flag — Start session in plan mode
 
-## Usage
+## Workflow
 
-1. Enable plan mode with `/plan` or `--plan` flag
-2. Ask the agent to analyze code and create a plan
-3. The agent should output a numbered plan under a `Plan:` header:
+1. Enter plan mode (`/plan`)
+2. Agent investigates the codebase using read-only tools
+3. Agent writes a plan file to `.pi/plans/plan-<timestamp>.md`
+4. User chooses: **Execute** / **Refine** / **Stay**
+5. On execute: full tools restored, agent reads plan file and implements
 
-```
-Plan:
-1. First step description
-2. Second step description
-3. Third step description
-```
+## Plan Files
 
-4. Choose "Execute the plan" when prompted
-5. During execution, the agent marks steps complete with `[DONE:n]` tags
-6. Progress widget shows completion status
+Plans are written to `<project>/.pi/plans/` as Markdown with three sections:
+- **Context** — why the change is needed
+- **Steps** — concrete numbered implementation actions
+- **Verification** — commands to confirm success
 
-## How It Works
+## Bash in Plan Mode
 
-### Plan Mode (Read-Only)
-- Only read-only tools available
-- Bash commands filtered through allowlist
-- Agent creates a plan without making changes
+Uses a **blocklist** approach — any command is allowed unless it's destructive:
 
-### Execution Mode
-- Full tool access restored
-- Agent executes steps in order
-- `[DONE:n]` markers track completion
-- Widget shows progress
-
-### Command Allowlist
-
-**File inspection:**
-- `cat`, `head`, `tail`, `less`, `more`
-- `grep`, `rg` (ripgrep), `fd` (fzf find)
-- `find`, `ls`, `pwd`, `tree`, `bat`, `eza`
-
-**Text processing:**
-- `echo`, `printf`, `wc`, `sort`, `uniq`, `diff`, `file`, `stat`, `du`, `df`
-- `sed -n`, `awk` (read-only)
-
-**Search & directory:**
-- `which`, `whereis`, `type`, `env`, `printenv`, `uname`, `whoami`, `id`
-- `date`, `cal`, `uptime`, `ps`, `htop`, `free`
-
-**Git (read-only):**
-- `git status`, `git log`, `git diff`, `git show`, `git branch`
-- `git remote`, `git config --get`, `git ls-`
-
-**Package info:**
-- `npm list`, `npm ls`, `npm view`, `npm info`, `npm search`, `npm outdated`, `npm audit`
-- `yarn list`, `yarn info`, `yarn why`, `yarn audit`
-
-**Runtime:**
-- `node --version`, `python --version`
-
-**Limited network:**
-- `curl` (GET only, no POST/PUT/PATCH/DELETE, no data upload)
-- `wget -O -` (download to stdout)
-
-**JQ & streaming:**
-- `jq`, `curl | jq` for JSON parsing
-
-Blocked commands:
-- File modification: `rm`, `mv`, `cp`, `mkdir`, `touch`
-- Git write: `git add`, `git commit`, `git push`
-- Package install: `npm install`, `yarn add`, `pip install`
-- System: `sudo`, `kill`, `reboot`
+**Blocked:**
+- File mutation: `rm`, `mv`, `cp`, `mkdir`, `touch`, `chmod`, `tee`, `>`, `>>`
+- Package install: `npm install`, `yarn add`, `pip install`, `apt install`, `brew install`
+- Git write: `git add`, `git commit`, `git push`, `git reset`, `git rebase`
+- System: `sudo`, `kill`, `reboot`, `systemctl start/stop/restart`
 - Editors: `vim`, `nano`, `code`
+- Container/infra: `docker rm/stop/kill`, `kubectl delete/apply/create`
+
+**Allowed (everything else):**
+- `objdump`, `rizin`, `readelf`, `nm`, `strings`, `hexdump`, `xxd`
+- `python -c`, `node -e`, `cargo --version`, `go version`
+- `curl` (GET only), `wget`, `jq`, `rg`, `fd`, `bat`
+- `git log`, `git diff`, `git show`, `git status`, `git branch`
+- All standard Unix read commands
+
+## State Machine
+
+```
+NORMAL → /plan → PLANNING → (plan file written) → REVIEWING → Execute → EXECUTING → NORMAL
+                    ↑              |                              |
+                    |              ← Stay / Cancel                |
+                    |                                             |
+                    ← ────────── /plan (abort) ──────────────────←
+```
+
+## Session Persistence
+
+State is persisted via `pi.appendEntry()` on every transition. On resume:
+- State and plan file path are restored
+- If the plan file no longer exists on disk, state resets to normal
+- Tool restrictions are re-applied if still in planning
