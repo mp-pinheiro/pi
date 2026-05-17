@@ -51,7 +51,7 @@ ensure_docker_proxy() {
         export SP_RESOLVE_SYMLINKS=true
         export SP_LOGLEVEL=WARN
 
-        "$proxy_bin" </dev/null >/tmp/pi-docker-proxy.log 2>&1 &
+        setsid "$proxy_bin" </dev/null >/tmp/pi-docker-proxy.log 2>&1 &
         echo "$!" > /tmp/pi-docker-proxy.pid
     ) || true
 
