@@ -15,7 +15,10 @@ directory and pi runtime paths are readable. Secrets and credentials are
 invisible.
 
 **Network boundary:** Outbound connections are restricted to allowed API
-providers only. See `srt.json` for the current allowlist.
+providers only. See `srt.json` for the current allowlist. `localhost` is
+unreachable (isolated network namespace). Use `dev.pi` to reach services
+running on the host (e.g. `curl http://dev.pi:8080/` instead of
+`curl http://localhost:8080/`).
 
 ## Plan Mode
 

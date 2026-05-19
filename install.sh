@@ -110,6 +110,11 @@ if ! grep -q 'llm\.pi' /etc/hosts 2>/dev/null; then
     echo "127.0.0.1 llm.pi" | sudo tee -a /etc/hosts >/dev/null
 fi
 
+if ! grep -q 'dev\.pi' /etc/hosts 2>/dev/null; then
+    info "Adding dev.pi to /etc/hosts (for sandbox access to host services)..."
+    echo "127.0.0.1 dev.pi" | sudo tee -a /etc/hosts >/dev/null
+fi
+
 if [ ! -f "$HOME/.zsh_secrets" ]; then
     warn "~/.zsh_secrets not found. Create it with your API keys (see .zsh_secrets.example)."
 fi
