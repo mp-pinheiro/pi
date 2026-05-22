@@ -267,16 +267,17 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		} catch { /* race with deletion */ }
 
 		if (planContent.trim()) {
-			pi.sendMessage({ customType: "plan-review", content: planContent, display: true });
+			pi.sendMessage({ customType: "plan-review", content: `**Plan file:** \`${planFile}\`\n\n${planContent}`, display: true });
 		}
 
+		const planName = planFile?.split("/").pop() ?? "";
 		const choices = [
 			"Execute the plan",
 			"Refine the plan",
 			"Stay in plan mode",
 		] as const;
 
-		const choice = await ctx.ui.select("Plan ready — what next?", [...choices]);
+		const choice = await ctx.ui.select(`Plan ready — what next? (${planName})`, [...choices]);
 
 		if (choice === choices[0]) {
 			state = "executing";
