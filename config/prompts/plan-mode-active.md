@@ -25,6 +25,9 @@ Use the `write` tool to create this file. This is the ONLY file you may write.
 
 2. **Only after investigation is complete, write the plan file.**
 
+3. **After writing the plan file, output its full content as markdown in your response.**
+   The user will scroll through it with their terminal scrollback before choosing Execute/Refine/Stay.
+
 ## Plan File Format
 
 ```markdown

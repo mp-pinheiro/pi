@@ -1,6 +1,7 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import type { TextContent } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { Markdown, type MarkdownTheme } from "@mariozechner/pi-tui";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -39,6 +40,27 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		description: "Start in plan mode (read-only exploration)",
 		type: "boolean",
 		default: false,
+	});
+
+	pi.registerMessageRenderer("plan-review", (message, _options, theme) => {
+		const text = typeof message.content === "string" ? message.content : "";
+		const mdTheme: MarkdownTheme = {
+			heading: (t) => theme.fg("accent", theme.bold(t)),
+			link: (t) => theme.fg("accent", t),
+			linkUrl: (t) => theme.fg("dim", t),
+			code: (t) => theme.fg("warning", t),
+			codeBlock: (t) => t,
+			codeBlockBorder: (t) => theme.fg("border", t),
+			quote: (t) => theme.fg("muted", t),
+			quoteBorder: (t) => theme.fg("border", t),
+			hr: (t) => theme.fg("border", t),
+			listBullet: (t) => theme.fg("accent", t),
+			bold: (t) => theme.bold(t),
+			italic: (t) => t,
+			strikethrough: (t) => theme.fg("dim", t),
+			underline: (t) => t,
+		};
+		return new Markdown(text, 1, 1, mdTheme);
 	});
 
 	function persistState(): void {
@@ -242,14 +264,10 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		let planContent = "";
 		try {
 			planContent = readFileSync(planFile, "utf-8");
-		} catch { /* file disappeared between existsSync and read */ }
+		} catch { /* race with deletion */ }
 
 		if (planContent.trim()) {
-			pi.sendMessage({
-				customType: "plan-review",
-				content: planContent,
-				display: true,
-			});
+			pi.sendMessage({ customType: "plan-review", content: planContent, display: true });
 		}
 
 		const choices = [
@@ -277,11 +295,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		} else if (choice === choices[1]) {
 			state = "planning";
 			persistState();
-			let currentContent = "";
-			try {
-				currentContent = readFileSync(planFile, "utf-8");
-			} catch { /* file may have been deleted between check and read */ }
-			const refinement = await ctx.ui.editor("Refine the plan:", currentContent);
+			const refinement = await ctx.ui.editor("Refine the plan:");
 			if (refinement?.trim()) {
 				pi.sendMessage(
 					{
