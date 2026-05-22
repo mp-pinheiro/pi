@@ -145,28 +145,50 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		"plan-execution-context",
 		"plan-mode-execute",
 		"plan-complete",
+		"plan-review",
+		"plan-refinement",
 	]);
 	const STALE_PLAN_MARKERS = ["[PLAN MODE ACTIVE]", "[EXECUTING PLAN]"];
 
+	const DEDUP_TYPES = new Set(["plan-mode-context", "plan-review", "plan-refinement"]);
+
 	pi.on("context", async (event) => {
-		if (state !== "normal") return;
-		return {
-			messages: event.messages.filter((m) => {
-				const msg = m as AgentMessage & { customType?: string };
-				if (STALE_PLAN_CUSTOM_TYPES.has(msg.customType ?? "")) return false;
-				if (msg.role !== "user") return true;
-				const content = msg.content;
-				if (typeof content === "string") {
-					return !STALE_PLAN_MARKERS.some((marker) => content.includes(marker));
-				}
-				if (Array.isArray(content)) {
-					return !content.some(
-						(c) => c.type === "text" && STALE_PLAN_MARKERS.some((marker) => (c as TextContent).text?.includes(marker)),
-					);
-				}
-				return true;
-			}),
-		};
+		if (state === "normal") {
+			return {
+				messages: event.messages.filter((m) => {
+					const msg = m as AgentMessage & { customType?: string };
+					if (STALE_PLAN_CUSTOM_TYPES.has(msg.customType ?? "")) return false;
+					if (msg.role !== "user") return true;
+					const content = msg.content;
+					if (typeof content === "string") {
+						return !STALE_PLAN_MARKERS.some((marker) => content.includes(marker));
+					}
+					if (Array.isArray(content)) {
+						return !content.some(
+							(c) => c.type === "text" && STALE_PLAN_MARKERS.some((marker) => (c as TextContent).text?.includes(marker)),
+						);
+					}
+					return true;
+				}),
+			};
+		}
+
+		if (state === "planning" || state === "reviewing") {
+			const messages = event.messages as (AgentMessage & { customType?: string })[];
+			const lastIndexOf = new Map<string, number>();
+			for (let i = 0; i < messages.length; i++) {
+				const ct = messages[i].customType ?? "";
+				if (DEDUP_TYPES.has(ct)) lastIndexOf.set(ct, i);
+			}
+			if (lastIndexOf.size === 0) return;
+			return {
+				messages: messages.filter((m, i) => {
+					const ct = m.customType ?? "";
+					if (!DEDUP_TYPES.has(ct)) return true;
+					return lastIndexOf.get(ct) === i;
+				}),
+			};
+		}
 	});
 
 	pi.on("before_agent_start", async () => {
@@ -217,6 +239,19 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 		state = "reviewing";
 		persistState();
 
+		let planContent = "";
+		try {
+			planContent = readFileSync(planFile, "utf-8");
+		} catch { /* file disappeared between existsSync and read */ }
+
+		if (planContent.trim()) {
+			pi.sendMessage({
+				customType: "plan-review",
+				content: planContent,
+				display: true,
+			});
+		}
+
 		const choices = [
 			"Execute the plan",
 			"Refine the plan",
@@ -248,7 +283,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 			} catch { /* file may have been deleted between check and read */ }
 			const refinement = await ctx.ui.editor("Refine the plan:", currentContent);
 			if (refinement?.trim()) {
-				pi.sendUserMessage(`Revise the plan based on this feedback. Update the plan file at \`${planFile}\`.\n\nFeedback:\n${refinement.trim()}`);
+				pi.sendMessage(
+					{
+						customType: "plan-refinement",
+						content: `Revise the plan based on this feedback. Update the plan file at \`${planFile}\`.\n\nFeedback:\n${refinement.trim()}`,
+						display: true,
+					},
+					{ triggerTurn: true },
+				);
 			} else {
 				ctx.ui.notify("No refinement provided. Still in plan mode.");
 			}
