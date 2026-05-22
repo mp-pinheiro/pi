@@ -36,8 +36,8 @@ command -v socat &>/dev/null || pkg_install socat
 
 # -- pi binary -------------------------------------------------------------
 
-PI_PIN="0.73.1"
-PI_PKG="@mariozechner/pi-coding-agent"
+PI_PIN="0.75.4"
+PI_PKG="@earendil-works/pi-coding-agent"
 
 pi_ver="$(pi --version 2>/dev/null || echo "")"
 if [ "$pi_ver" != "$PI_PIN" ]; then
@@ -69,7 +69,7 @@ fi
 
 if ! pi list 2>/dev/null | grep -q "pi-web-providers"; then
     info "Installing pi-web-providers..."
-    pi install npm:pi-web-providers@3.0.0
+    pi install npm:pi-web-providers@3.1.0
 fi
 
 # -- docker proxy ----------------------------------------------------------
