@@ -30,15 +30,11 @@ If no changes found:
 - Prompt user: "No recent changes detected. Describe what to document (or 'abort'):"
 - Accept description or 'abort'
 
-### Pass 2: Pack codebase for analysis
+### Pass 2: Survey the codebase
 
-Run `mcp__repomix__pack_codebase` to repository root.
+Use `git ls-files` and `rg --files` to map the tree, then Read the files touched by the changes and their neighbors.
 
-Standard exclusions (ignorePatterns):
-
-- `node_modules/**`, `dist/**`, `build/**`, `.git/**`, `vendor/**`, `target/**`, `*.test.*`, `*.spec.*`
-
-Output to scratchpad directory.
+Skip build artifacts and tests: `node_modules/**`, `dist/**`, `build/**`, `.git/**`, `vendor/**`, `target/**`, `*.test.*`, `*.spec.*`.
 
 ### Pass 3: Analyze and update documentation
 
@@ -52,7 +48,7 @@ rg --files -g 'README*' -g 'CHANGELOG*' -g 'CONTRIBUTING*' -g '*.md' --no-ignore
 
 #### Analyze code changes
 
-Query the codebase pack with scope context:
+From the files you read, analyze the changes for scope context:
 "Analyze recent code changes for: **{scope}**. Identify:
 1. What functionality was added, removed, or changed
 2. New APIs, configuration options, or environment variables
