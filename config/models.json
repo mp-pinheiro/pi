@@ -2,8 +2,10 @@
   "providers": {
     "zai": {
       "apiKey": "Z_AI_API_KEY",
+      "models": [
+        { "id": "glm-5.2[1m]", "name": "GLM-5.2 1M (z.ai sub · default)", "reasoning": true, "input": ["text"], "contextWindow": 1000000, "maxTokens": 131072 }
+      ],
       "modelOverrides": {
-        "glm-5.2[1m]": { "name": "GLM-5.2 1M (z.ai sub · default)", "contextWindow": 1000000, "maxTokens": 131072 },
         "glm-5-turbo": { "name": "GLM-5-Turbo (z.ai sub · fast)", "contextWindow": 202752, "maxTokens": 131072 }
       }
     },
