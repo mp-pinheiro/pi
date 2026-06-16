@@ -67,9 +67,14 @@ if [ ! -x /usr/local/bin/apply-seccomp ]; then
     fi
 fi
 
-if ! pi list 2>/dev/null | grep -q "pi-web-providers"; then
+# Seed the extension prefix directly. `pi install` runs through the srt
+# sandbox, whose allowlist excludes registry.npmjs.org -- it would 403. So
+# install with raw npm outside the sandbox, guarded on actual presence.
+PI_NPM_PREFIX="$HOME/.pi/agent/npm"
+if [ ! -d "$PI_NPM_PREFIX/node_modules/pi-web-providers" ]; then
     info "Installing pi-web-providers..."
-    pi install npm:pi-web-providers@3.1.0
+    mkdir -p "$PI_NPM_PREFIX"
+    npm install pi-web-providers --prefix "$PI_NPM_PREFIX"
 fi
 
 # -- docker proxy ----------------------------------------------------------
