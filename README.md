@@ -7,7 +7,7 @@ Opinionated [pi.dev](https://pi.dev) coding agent configuration with sandbox, lo
 - **Sandbox** (`pi-sb`): bubblewrap-based filesystem/network isolation via [srt](https://www.npmjs.com/package/@anthropic-ai/sandbox-runtime). Agent can only see the current directory and `~/.pi/` -- no `~/.ssh`, no secrets, no arbitrary network.
 - **Memory**: vendored SQLite-backed long-term memory (forked from `@samfp/pi-memory`). Cross-session recall with FTS search and automatic consolidation.
 - **Plan mode**: read-only investigation phase, then confirmed execution with progress tracking.
-- **Multi-provider models**: z.ai (GLM-5.1), OpenAI (GPT-5.3 Codex), OpenRouter (Claude, Kimi K2, Gemini), local llama.cpp (Qwen). All resolved from env vars at runtime.
+- **Multi-provider models**: z.ai (GLM-5.2), OpenAI (GPT-5.3 Codex), OpenRouter (Claude, Kimi K2, Gemini), local llama.cpp (Qwen). All resolved from env vars at runtime.
 - **Extensions**: status bar, `/cost`, `/effort`, `/clear`, questionnaire tool, plan mode.
 - **Skills**: commit (atomic, style-mimicking), docs (codebase documentation updater), cleanup (AI artifact removal), explore (codebase exploration).
 
@@ -87,7 +87,7 @@ Configured in `config/models.json`. Four providers:
 
 | Provider | Models | Auth |
 |----------|--------|------|
-| z.ai | GLM-5.1 (default), GLM-5-Turbo | `Z_AI_API_KEY` |
+| z.ai | GLM-5.2 (default), GLM-5-Turbo | `Z_AI_API_KEY` |
 | OpenAI Codex | GPT-5.3 Codex, GPT-5.1 Codex Max | ChatGPT subscription |
 | OpenRouter | Claude Opus/Sonnet 4.6, Kimi K2, Gemini 3 Flash | `OPENROUTER_API_KEY` |
 | llama (local) | Qwen 9B (fast), Qwen 35B (smart) | local |
