@@ -49,10 +49,18 @@ if [ "$pi_ver" != "$PI_PIN" ]; then
     rm -f "$(npm bin -g 2>/dev/null)/pi" 2>/dev/null || true
 fi
 
-if ! command -v srt &>/dev/null; then
+# srt installs under the active fnm node. Projects that pin a different node
+# (.node-version) get a PATH without srt, so the pi launchers fail with
+# "command not found: srt". Install under the active node, then symlink into
+# ~/.local/bin (always on PATH) so srt resolves regardless of the pane's node.
+srt_bin="$(npm prefix -g 2>/dev/null)/bin/srt"
+if [ ! -e "$srt_bin" ]; then
     info "Installing srt..."
     npm install -g @anthropic-ai/sandbox-runtime
+    srt_bin="$(npm prefix -g 2>/dev/null)/bin/srt"
 fi
+mkdir -p "$HOME/.local/bin"
+ln -sf "$srt_bin" "$HOME/.local/bin/srt"
 
 # srt's apply-seccomp lives under $HOME in the npm package, but srt.json
 # denies reads on ~. Stage a copy outside ~ so srt finds it in the sandbox.
