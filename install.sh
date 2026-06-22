@@ -10,6 +10,7 @@ success() { printf '\033[0;32m[✓]\033[0m %s\n' "$*"; }
 warn()    { printf '\033[0;33m[!]\033[0m %s\n' "$*"; }
 
 is_steamos() { grep -q "^ID=steamos" /etc/os-release 2>/dev/null; }
+is_mac()     { [ "$(uname -s)" = "Darwin" ]; }
 
 pkg_install() {
     if command -v apt-get &>/dev/null; then
@@ -30,9 +31,12 @@ if is_steamos; then
 fi
 
 # -- dependencies ----------------------------------------------------------
-
-command -v bwrap &>/dev/null || pkg_install bubblewrap
-command -v socat &>/dev/null || pkg_install socat
+# srt uses OS-native sandboxing: macOS sandbox-exec needs no external deps,
+# Linux needs bubblewrap + socat (+ optional seccomp, staged below).
+if ! is_mac; then
+    command -v bwrap &>/dev/null || pkg_install bubblewrap
+    command -v socat &>/dev/null || pkg_install socat
+fi
 
 # -- pi binary -------------------------------------------------------------
 
@@ -64,7 +68,8 @@ ln -sf "$srt_bin" "$HOME/.local/bin/srt"
 
 # srt's apply-seccomp lives under $HOME in the npm package, but srt.json
 # denies reads on ~. Stage a copy outside ~ so srt finds it in the sandbox.
-if [ ! -x /usr/local/bin/apply-seccomp ]; then
+# seccomp is Linux-only; macOS srt uses sandbox-exec and ignores it.
+if ! is_mac && [ ! -x /usr/local/bin/apply-seccomp ]; then
     srt_root="$(npm root -g 2>/dev/null)/@anthropic-ai/sandbox-runtime"
     srt_seccomp="$srt_root/vendor/seccomp/x64/apply-seccomp"
     if [ -x "$srt_seccomp" ]; then

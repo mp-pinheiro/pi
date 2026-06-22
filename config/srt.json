@@ -12,5 +12,6 @@
   },
   "seccomp": {
     "applyPath": "/usr/local/bin/apply-seccomp"
-  }
+  },
+  "allowPty": true
 }

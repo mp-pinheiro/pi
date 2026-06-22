@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# Resolve real script dir even via the ~/.local/bin symlink. BSD readlink
+# (macOS) lacks -f, so resolve the one-level absolute symlink by hand.
+src="$0"
+[ -L "$src" ] && src="$(readlink "$src")"
+SCRIPT_DIR="$(cd "$(dirname "$src")" && pwd)"
 SRT_SETTINGS="${PI_SRT_SETTINGS:-$HOME/.pi/srt.json}"
 
 if [ -f "$HOME/.zsh_secrets" ]; then
@@ -18,13 +22,15 @@ ensure_docker_proxy
 FNM_ROOT="$HOME/.local/share/fnm"
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--use-env-proxy"
 export npm_config_prefix="$FNM_ROOT/node-versions/$(fnm current 2>/dev/null || ls "$FNM_ROOT/node-versions/" 2>/dev/null | head -1)/installation"
-# srt invokes bwrap with --new-session, detaching pi from the controlling
-# terminal session. SIGWINCH never reaches pi. Spawn a background monitor
-# that polls terminal size and walks /proc to send SIGWINCH to descendants.
+# srt on Linux invokes bwrap with --new-session, detaching pi from the
+# controlling terminal session, so SIGWINCH never reaches pi. A monitor polls
+# terminal size and walks /proc to forward SIGWINCH to descendants. macOS uses
+# sandbox-exec (no detach) and has no /proc, so the monitor self-exits there.
 exec 3<&0
 (
     exec 0<&3 3<&-
     trap '' HUP
+    [ -d /proc ] || exit 0
     target=$$
     sleep 2
     prev=$(stty size 2>/dev/null) || exit 0

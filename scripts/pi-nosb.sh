@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# Resolve real script dir even via the ~/.local/bin symlink. BSD readlink
+# (macOS) lacks -f, so resolve the one-level absolute symlink by hand.
+src="$0"
+[ -L "$src" ] && src="$(readlink "$src")"
+SCRIPT_DIR="$(cd "$(dirname "$src")" && pwd)"
 
 if [ -f "$HOME/.zsh_secrets" ]; then
     set -a
