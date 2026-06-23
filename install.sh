@@ -40,18 +40,31 @@ fi
 
 # -- pi binary -------------------------------------------------------------
 
-PI_PIN="0.75.4"
+# Track latest pi, but only (re)install when the installed version differs from
+# the target -- a bare `npm install -g @latest` rewrites the whole tree every
+# run. To pin, set PI_VERSION to a version string (e.g. "0.79.10").
 PI_PKG="@earendil-works/pi-coding-agent"
+PI_VERSION="latest"
 
-pi_ver="$(pi --version 2>/dev/null || echo "")"
-if [ "$pi_ver" != "$PI_PIN" ]; then
-    info "Pinning pi to $PI_PIN..."
-    npm uninstall -g @earendil-works/pi-coding-agent 2>/dev/null || true
-    npm uninstall -g @mariozechner/pi-coding-agent 2>/dev/null || true
-    npm install -g "${PI_PKG}@${PI_PIN}"
-    # Remove npm's pi shim so our wrapper at ~/.local/bin/pi takes precedence
-    rm -f "$(npm bin -g 2>/dev/null)/pi" 2>/dev/null || true
+pi_pkgjson="$(npm root -g 2>/dev/null)/${PI_PKG}/package.json"
+pi_current="$(grep -m1 '^[[:space:]]*"version"' "$pi_pkgjson" 2>/dev/null | cut -d'"' -f4)"
+if [ "$PI_VERSION" = "latest" ]; then
+    pi_target="$(npm view "$PI_PKG" version 2>/dev/null || echo "")"
+else
+    pi_target="$PI_VERSION"
 fi
+
+# Skip when already on target, or when the target can't be resolved (offline)
+# but something is installed -- never churn needlessly.
+if [ -n "$pi_current" ] && { [ "$pi_current" = "$pi_target" ] || [ -z "$pi_target" ]; }; then
+    info "pi already at ${pi_current}, skipping."
+else
+    info "Installing pi (${pi_target:-$PI_VERSION})..."
+    npm uninstall -g @mariozechner/pi-coding-agent 2>/dev/null || true  # retired name
+    npm install -g "${PI_PKG}@${PI_VERSION}"
+fi
+# pi's wrapper at ~/.local/bin/pi wins by PATH order; npm's own pi shim must stay
+# so srt can exec `pi` inside the sandbox -- do not remove it.
 
 # srt installs under the active fnm node. Projects that pin a different node
 # (.node-version) get a PATH without srt, so the pi launchers fail with
