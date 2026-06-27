@@ -1,12 +1,21 @@
 import type { AssistantMessage } from "@mariozechner/pi-ai";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
-import { execSync } from "child_process";
+import { exec } from "child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const fmt = (n: number) =>
 	n < 1000 ? `${n}` : n < 1_000_000 ? `${(n / 1000).toFixed(1)}k` : `${(n / 1_000_000).toFixed(2)}M`;
+
+// render() runs on every repaint, so it must not spawn subprocesses inline:
+// that blocks the event loop and shows up as input lag (worse under sandbox-exec,
+// which re-sandboxes every spawn). State refreshes async; render() reads the cache.
+
+interface GitStatus {
+	branch: string;
+	status: string;
+}
 
 interface ProviderStatus {
 	status: "online" | "offline" | "unknown";
@@ -17,90 +26,98 @@ interface StatusCache {
 	openrouter: ProviderStatus;
 }
 
-function getCachedProviderStatus(): ProviderStatus {
-	const cacheDir = join(process.env.HOME || "", ".cache", "pi-status");
-	const cacheFile = join(cacheDir, "status.json");
+let gitCache: GitStatus = { branch: "no-git", status: "" };
+let gitRefreshing = false;
+let gitRefreshedAt = 0;
+const GIT_TTL = 2000;
+
+let providerCache: ProviderStatus = { status: "unknown", timestamp: 0 };
+let providerRefreshing = false;
+const PROVIDER_TTL = 300000;
+
+// One async spawn (vs three sync ones) gathers branch + dirty + unpushed; \x1f
+// (unit separator) delimits the fields so they can't collide with branch names.
+function refreshGitStatus(onDone: () => void): void {
 	const now = Date.now();
-	const ttl = 300000;
-
-	try {
-		mkdirSync(cacheDir, { recursive: true });
-		const cache = JSON.parse(readFileSync(cacheFile, "utf8")) as StatusCache;
-		const cached = cache.openrouter;
-		if (cached && now - cached.timestamp < ttl) {
-			return cached;
+	if (gitRefreshing || now - gitRefreshedAt < GIT_TTL) return;
+	gitRefreshing = true;
+	const cmd =
+		'b=$(git branch --show-current 2>/dev/null); ' +
+		'c=$(git status --porcelain 2>/dev/null); ' +
+		'u=$(git log @{u}..HEAD --oneline 2>/dev/null); ' +
+		'printf "%s\\037%s\\037%s" "$b" "${c:+1}" "${u:+1}"';
+	exec(cmd, { encoding: "utf8", timeout: 5000 }, (err, stdout) => {
+		gitRefreshing = false;
+		gitRefreshedAt = Date.now();
+		const [branch, hasChanges, hasUnpushed] = String(stdout || "").split("\x1f");
+		if (err || !branch) {
+			gitCache = { branch: "no-git", status: "" };
+		} else {
+			let status = "";
+			if (hasChanges) status += "*";
+			if (hasUnpushed) status += "↑";
+			if (!hasChanges && !hasUnpushed) status = "✓";
+			gitCache = { branch, status };
 		}
-	} catch (e) {
-	}
-
-	let status: ProviderStatus["status"] = "unknown";
-	try {
-		const cmd = "curl -sI --connect-timeout 2 --max-time 3 https://openrouter.ai 2>/dev/null | head -1";
-		const result = execSync(cmd, { encoding: "utf8", timeout: 5000 }).trim();
-		if (result.includes("200") || result.includes("301") || result.includes("302")) {
-			status = "online";
-		} else if (result.includes("5")) {
-			status = "offline";
-		}
-	} catch (e) {
-	}
-
-	const providerStatus: ProviderStatus = { status, timestamp: now };
-
-	try {
-		const cache: StatusCache = { openrouter: providerStatus };
-		writeFileSync(cacheFile, JSON.stringify(cache, null, 2));
-	} catch (e) {
-	}
-
-	return providerStatus;
+		onDone();
+	});
 }
 
-function getGitStatus(): { branch: string; status: string } {
-	const result = { branch: "no-git", status: "" };
+function refreshProviderStatus(onDone: () => void): void {
+	const now = Date.now();
+	if (providerRefreshing || now - providerCache.timestamp < PROVIDER_TTL) return;
+	providerRefreshing = true;
 
+	const cacheDir = join(process.env.HOME || "", ".cache", "pi-status");
+	const cacheFile = join(cacheDir, "status.json");
+
+	// Warm the in-memory cache from disk first so a fresh session skips the probe.
 	try {
-		result.branch = execSync("git branch --show-current 2>/dev/null || echo 'no-git'", {
-			encoding: "utf8"
-		}).trim();
-
-		if (result.branch === "no-git") {
-			return result;
+		const disk = JSON.parse(readFileSync(cacheFile, "utf8")) as StatusCache;
+		if (disk.openrouter && now - disk.openrouter.timestamp < PROVIDER_TTL) {
+			providerCache = disk.openrouter;
+			providerRefreshing = false;
+			return;
 		}
+	} catch (e) {}
 
-		const hasChanges = execSync("git status --porcelain 2>/dev/null || true", {
-			encoding: "utf8"
-		}).trim();
-
-		const hasUnpushed = execSync("git log @{u}..HEAD --oneline 2>/dev/null || true", {
-			encoding: "utf8"
-		}).trim();
-
-		if (hasChanges) {
-			result.status += "*";
+	const cmd = "curl -sI --connect-timeout 2 --max-time 3 https://openrouter.ai 2>/dev/null | head -1";
+	exec(cmd, { encoding: "utf8", timeout: 5000 }, (err, stdout) => {
+		providerRefreshing = false;
+		let status: ProviderStatus["status"] = "unknown";
+		const result = String(stdout || "").trim();
+		if (!err) {
+			if (result.includes("200") || result.includes("301") || result.includes("302")) {
+				status = "online";
+			} else if (result.includes("5")) {
+				status = "offline";
+			}
 		}
-		if (hasUnpushed) {
-			result.status += "↑";
-		}
-		if (!hasChanges && !hasUnpushed) {
-			result.status = "✓";
-		}
-	} catch (e) {
-		result.branch = "no-git";
-		result.status = "";
-	}
-
-	return result;
+		providerCache = { status, timestamp: Date.now() };
+		try {
+			mkdirSync(cacheDir, { recursive: true });
+			const toWrite: StatusCache = { openrouter: providerCache };
+			writeFileSync(cacheFile, JSON.stringify(toWrite, null, 2));
+		} catch (e) {}
+		onDone();
+	});
 }
 
 export default function (pi: ExtensionAPI) {
 	const install = (ctx: any) => {
 		ctx.ui.setFooter((tui: any, theme: any, footerData: any) => {
-			const unsub = footerData.onBranchChange(() => tui.requestRender());
+			const unsub = footerData.onBranchChange(() => {
+				gitRefreshedAt = 0; // a branch change should refresh status immediately
+				tui.requestRender();
+			});
 			return {
 				dispose: unsub,
 				invalidate() {},
 				render(width: number): string[] {
+					// Kick throttled background refreshes; their callbacks repaint when done.
+					refreshGitStatus(() => tui.requestRender());
+					refreshProviderStatus(() => tui.requestRender());
+
 					let input = 0,
 						output = 0,
 						cost = 0;
@@ -131,20 +148,18 @@ export default function (pi: ExtensionAPI) {
 					const ctxTokens = ctxUsage?.tokens ?? 0;
 					const ctxPct = ctxMax > 0 ? Math.round((ctxTokens / ctxMax) * 100) : 0;
 
-					const git = getGitStatus();
-					const branch = footerData.getGitBranch() || git.branch;
+					const branch = footerData.getGitBranch() || gitCache.branch;
+					const gitStatus = gitCache.status;
 
-					const provider = getCachedProviderStatus();
-
-					const statusColor = provider.status === "online" ? "success" :
-										provider.status === "offline" ? "error" : "text";
+					const statusColor = providerCache.status === "online" ? "success" :
+										providerCache.status === "offline" ? "error" : "text";
 					const sicon = theme.fg(statusColor, "●");
 
 					let branchDisplay = branch;
-					if (branch !== "no-git" && git.status) {
-						const gitStatusColor = git.status === "✓" ? "success" :
-											git.status.includes("*") ? "warning" : "accent";
-						branchDisplay = `${branch} (${theme.fg(gitStatusColor, git.status)})`;
+					if (branch !== "no-git" && gitStatus) {
+						const gitStatusColor = gitStatus === "✓" ? "success" :
+											gitStatus.includes("*") ? "warning" : "accent";
+						branchDisplay = `${branch} (${theme.fg(gitStatusColor, gitStatus)})`;
 					}
 					const gitPart = theme.fg("accent", `⎇ ${branchDisplay}`);
 
