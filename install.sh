@@ -11,6 +11,7 @@ warn()    { printf '\033[0;33m[!]\033[0m %s\n' "$*"; }
 
 is_steamos() { grep -q "^ID=steamos" /etc/os-release 2>/dev/null; }
 is_mac()     { [ "$(uname -s)" = "Darwin" ]; }
+is_wsl()     { grep -qiE "microsoft|wsl" /proc/sys/kernel/osrelease 2>/dev/null; }
 
 pkg_install() {
     if command -v apt-get &>/dev/null; then
@@ -144,6 +145,16 @@ fi
 if ! grep -q 'dev\.pi' /etc/hosts 2>/dev/null; then
     info "Adding dev.pi to /etc/hosts (for sandbox access to host services)..."
     echo "127.0.0.1 dev.pi" | sudo tee -a /etc/hosts >/dev/null
+fi
+
+# WSL regenerates /etc/hosts on every restart, wiping the entries above -- which
+# breaks llm.pi resolution inside the srt sandbox and forces a re-bootstrap each
+# boot. Freeze the file so they persist (this switch is documented in WSL's own
+# /etc/hosts header). Needs a one-time `wsl --shutdown` to take effect.
+if is_wsl && ! grep -q 'generateHosts' /etc/wsl.conf 2>/dev/null; then
+    info "Disabling WSL /etc/hosts regeneration so llm.pi/dev.pi persist across restarts..."
+    printf '\n[network]\ngenerateHosts = false\n' | sudo tee -a /etc/wsl.conf >/dev/null
+    warn "Run 'wsl --shutdown' from Windows once to apply (WSL reads wsl.conf at boot)."
 fi
 
 if [ ! -f "$HOME/.zsh_secrets" ]; then
