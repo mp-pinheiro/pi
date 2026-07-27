@@ -89,7 +89,7 @@ Configured in `config/models.json`. Four providers:
 |----------|--------|------|
 | z.ai | GLM-5.2 (default), GLM-5-Turbo | `Z_AI_API_KEY` |
 | OpenAI Codex | GPT-5.3 Codex, GPT-5.1 Codex Max | ChatGPT subscription |
-| OpenRouter | Claude Opus/Sonnet 4.6, Kimi K2, Gemini 3 Flash | `OPENROUTER_API_KEY` |
+| OpenRouter | Claude Opus 5, Sonnet 4.6, Kimi K2, Gemini 3 Flash | `OPENROUTER_API_KEY` |
 | llama (local) | Qwen 9B (fast), Qwen 35B (smart) | local |
 
 Switch models in-session with `/model`.

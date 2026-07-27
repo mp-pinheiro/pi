@@ -21,8 +21,8 @@
       "api": "openai-completions",
       "models": [
         {
-          "id": "anthropic/claude-opus-4.8",
-          "name": "Opus 4.8 (arch / hard problems)",
+          "id": "anthropic/claude-opus-5",
+          "name": "Opus 5 (arch / hard problems)",
           "reasoning": true,
           "input": ["text", "image"],
           "contextWindow": 1000000,
