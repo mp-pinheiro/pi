@@ -1,6 +1,10 @@
 .bash_profile
 .bashrc
-.claude/
+.claude/*
+!.claude/hooks/
+!.claude/hooks/enforce-conventional-commits.sh
+!.claude/hooks/enforce-jj.sh
+!.claude/settings.json
 .gitconfig
 .gitmodules
 .idea
