@@ -45,24 +45,18 @@ Add to `~/.zshrc`:
 ```zsh
 pi() {
     (
-        set -a
-        source "$HOME/.zsh_secrets"
-        set +a
-        exec srt --settings "$HOME/.pi/srt.json" pi "$@"
+        # Perform any per-shell setup here, then delegate to the installed launcher.
+        exec "$HOME/.local/bin/pi" "$@"
     )
 }
 
 pi-nosb() {
-    (
-        set -a
-        source "$HOME/.zsh_secrets"
-        set +a
-        command pi "$@"
-    )
+    "$HOME/.local/bin/pi-nosb" "$@"
 }
 ```
 
 `pi` runs sandboxed by default. `pi-nosb` bypasses the sandbox for full host access.
+The installed launcher owns the SRT setup and forwards terminal resize signals; do not invoke `srt` directly.
 
 ## Usage
 

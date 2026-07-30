@@ -20,8 +20,11 @@ resolve_web_provider
 ensure_docker_proxy
 
 FNM_ROOT="$HOME/.local/share/fnm"
+FNM_VER="$(fnm current 2>/dev/null || ls "$FNM_ROOT/node-versions/" 2>/dev/null | head -1)"
+PI_BIN="$FNM_ROOT/node-versions/$FNM_VER/installation/bin/pi"
+[ -x "$PI_BIN" ] || { echo "pi binary not found at $PI_BIN" >&2; exit 1; }
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--use-env-proxy"
-export npm_config_prefix="$FNM_ROOT/node-versions/$(fnm current 2>/dev/null || ls "$FNM_ROOT/node-versions/" 2>/dev/null | head -1)/installation"
+export npm_config_prefix="$FNM_ROOT/node-versions/$FNM_VER/installation"
 # srt on Linux invokes bwrap with --new-session, detaching pi from the
 # controlling terminal session, so SIGWINCH never reaches pi. A monitor polls
 # terminal size and walks /proc to forward SIGWINCH to descendants. macOS uses
@@ -52,4 +55,4 @@ exec 3<&0
     done
 ) &
 exec 3<&-
-exec srt --settings "$SRT_SETTINGS" pi "$@"
+exec srt --settings "$SRT_SETTINGS" "$PI_BIN" "$@"

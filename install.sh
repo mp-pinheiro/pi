@@ -64,8 +64,8 @@ else
     npm uninstall -g @mariozechner/pi-coding-agent 2>/dev/null || true  # retired name
     npm install -g "${PI_PKG}@${PI_VERSION}"
 fi
-# pi's wrapper at ~/.local/bin/pi wins by PATH order; npm's own pi shim must stay
-# so srt can exec `pi` inside the sandbox -- do not remove it.
+# Keep npm's Pi binary installed; the launchers resolve it explicitly while
+# ~/.local/bin/pi remains the stable sandbox-wrapper entry point.
 
 # srt installs under the active fnm node. Projects that pin a different node
 # (.node-version) get a PATH without srt, so the pi launchers fail with
