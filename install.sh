@@ -48,7 +48,7 @@ PI_PKG="@earendil-works/pi-coding-agent"
 PI_VERSION="latest"
 
 pi_pkgjson="$(npm root -g 2>/dev/null)/${PI_PKG}/package.json"
-pi_current="$(grep -m1 '^[[:space:]]*"version"' "$pi_pkgjson" 2>/dev/null | cut -d'"' -f4)"
+pi_current="$(grep -m1 '^[[:space:]]*"version"' "$pi_pkgjson" 2>/dev/null | cut -d'"' -f4 || true)"
 if [ "$PI_VERSION" = "latest" ]; then
     pi_target="$(npm view "$PI_PKG" version 2>/dev/null || echo "")"
 else
